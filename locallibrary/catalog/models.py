@@ -5,6 +5,10 @@ from django.urls import reverse # Used in get_absolute_url() to get URL for spec
 
 from django.db.models import UniqueConstraint # Constrains fields to unique values
 from django.db.models.functions import Lower # Returns lower cased value of field
+from django.conf import settings
+from datetime import date
+
+
 
 class Genre(models.Model):
     """Model representing a book genre."""
@@ -43,6 +47,11 @@ class Book(models.Model):
                             unique=True,
                             help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn'
                                       '">ISBN number</a>')
+    def display_genre(self):
+        """Create a string for the Genre. This is required to display genre in Admin."""
+        return ', '.join(genre.name for genre in self.genre.all()[:3])
+
+    display_genre.short_description = 'Genre'
 
     # ManyToManyField used because genre can contain many books. Books can cover many genres.
     # Genre class has already been defined so we can specify the object above.
@@ -56,6 +65,13 @@ class Book(models.Model):
     def get_absolute_url(self):
         """Returns the URL to access a detail record for this book."""
         return reverse('book-detail', args=[str(self.id)])
+    
+    def display_genre(self):
+        """Create a string for the Genre. This is required to display genre in Admin."""
+        return ', '.join(genre.name for genre in self.genre.all()[:3])
+
+    display_genre.short_description = 'Genre'
+
 import uuid # Required for unique book instances
 
 class BookInstance(models.Model):
@@ -81,6 +97,11 @@ class BookInstance(models.Model):
         default='m',
         help_text='Book availability',
     )
+    borrower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    @property
+    def is_overdue(self):
+        """Determines if the book is overdue based on due date and current date."""
+        return bool(self.due_back and date.today() > self.due_back)
 
     class Meta:
         ordering = ['due_back']
