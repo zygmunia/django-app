@@ -175,4 +175,5 @@ cython_debug/
 
 # Database
 *.sqlite3
+*.pyc
 
